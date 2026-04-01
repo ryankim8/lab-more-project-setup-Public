@@ -1,6 +1,5 @@
-import os
+import os, pprint
 from groq import Groq
-
 from dotenv import load_dotenv
 load_dotenv()
 #in python class names are in CamelCase;
@@ -35,3 +34,13 @@ class Chat:
             "content": result
         })
         return result
+
+if __name__ == '__main__':
+    chat = Chat()
+    try:
+        while True: 
+                user_input = input('chat>')
+                response = chat.send_message(user_input)
+                print(response)
+    except KeyboardInterrupt:
+        print("hat has ended")
