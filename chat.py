@@ -82,7 +82,7 @@ def repl(temperature=0.8):
             response = chat.send_message(user_input, temperature)
             
             print(response)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         print()
 
 
