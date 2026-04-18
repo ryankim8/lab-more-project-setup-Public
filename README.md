@@ -5,11 +5,11 @@ A command-line AI assistant that can interact with local files using tools like 
 
 ## Badges
 
-![Doctests](https://github.com/abedoya-norena/lab-more-project-setup-Public/actions/workflows/doctest.yml/badge.svg)
+![Doctests](https://github.com/abedoya-norena/lab-more-project-setup-Public/actions/workflows/doctests.yml/badge.svg)
 ![Integration](https://github.com/abedoya-norena/lab-more-project-setup-Public/actions/workflows/integration.yml/badge.svg)
 ![Flake8](https://github.com/abedoya-norena/lab-more-project-setup-Public/actions/workflows/flake8.yml/badge.svg)
 ![PyPI](https://img.shields.io/pypi/v/cmc-csci005-alejandro)
-![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-%3E90%25-brightgreen)
 
 
 ## Demo
