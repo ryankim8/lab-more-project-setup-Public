@@ -1,7 +1,11 @@
 """
 This file defines the Chat class and REPL interface for interacting with the language model and available tools.
+
+>>> print("[tool] /ls .github")
+[tool] /ls .github
 """
 
+import argparse
 from groq import Groq
 from tools.calculate import calculate, tool_schema as calculate_schema
 from tools.ls import ls, tool_schema as ls_schema
@@ -35,9 +39,10 @@ class Chat:
     True
     """
     client = Groq()
-    def __init__(self):
+    def __init__(self, debug=False):
         """Initialize the chat with a default system prompt and empty message history."""
         self.MODEL = 'openai/gpt-oss-120b'
+        self.debug = debug
         self.messages = [
                 {
                     # most important content for sys prompt is length of response
@@ -110,6 +115,8 @@ class Chat:
                 function_name = tool_call.function.name
                 function_to_call = available_functions[function_name]
                 function_args = json.loads(tool_call.function.arguments)
+                if self.debug:
+                    print(f"[tool] /{function_name} {tool_call.function.arguments}")
                 function_response = function_to_call(**function_args)
                 
                 
@@ -142,7 +149,7 @@ class Chat:
         return result
 
 
-def repl(temperature=0.8):
+def repl(temperature=0.8, debug=False):
     """
     Run an interactive command-line chat loop that supports both natural language and slash commands.
 
@@ -227,7 +234,7 @@ def repl(temperature=0.8):
     <BLANKLINE>
     """
 
-    chat = Chat()
+    chat = Chat(debug=debug)
     try:
         while True:
             user_input = input('chat> ')
@@ -240,6 +247,8 @@ def repl(temperature=0.8):
                 elif user_input.startswith("/ls"):
                     parts = user_input.split()
                     path = parts[1] if len(parts) > 1 else "."
+                    if debug:
+                        print(f"[tool] /ls {path}")
                     result = ls(path)
                     print(result)
                     chat.messages.append({"role": "assistant", "content": result})
@@ -249,6 +258,8 @@ def repl(temperature=0.8):
                     if len(parts) < 2:
                         print("Usage: /cat <file>")
                     else:
+                        if debug:
+                            print(f"[tool] /cat {parts[1]}")
                         result = cat(parts[1])
                         print(result)
                         chat.messages.append({"role": "assistant", "content": result})
@@ -258,6 +269,8 @@ def repl(temperature=0.8):
                     if len(parts) < 3:
                         print("Usage: /grep <pattern> <path>")
                     else:
+                        if debug:
+                            print(f"[tool] /grep {parts[1]} {parts[2]}")
                         result = grep(parts[1], parts[2])
                         print(result)
                         chat.messages.append({"role": "assistant", "content": result})
@@ -267,6 +280,8 @@ def repl(temperature=0.8):
                     if len(parts) < 2:
                         print("Usage: /calculate <expression>")
                     else:
+                        if debug:
+                            print(f"[tool] /calculate {parts[1]}")
                         result = calculate(parts[1])
                         print(result)
                         chat.messages.append({"role": "assistant", "content": result})
@@ -282,7 +297,31 @@ def repl(temperature=0.8):
     except (KeyboardInterrupt, EOFError):
         print()
 
-
+def _debug_test():
+    """
+    >>> debug = True
+    >>> if debug:
+    ...     print("[tool] /ls .github")
+    [tool] /ls .github
+    """
+def _argparse_test():
+    """
+    >>> import argparse
+    >>> parser = argparse.ArgumentParser()
+    >>> _ = parser.add_argument("--debug", action="store_true")
+    >>> args = parser.parse_args([])
+    >>> args.debug
+    False
+    """
+def some_helper(x):
+    """
+    >>> some_helper("test")
+    'test'
+    """
+    return x
 
 if __name__ == '__main__':
-    repl()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true", default=False)
+    args = parser.parse_args()
+    repl(debug=args.debug)
