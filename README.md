@@ -87,13 +87,13 @@ Supported providers:
 
 ### Debug Mode
 
-Prints out tool use calls.
+Debug mode prints tool usage whenever a tool is invoked.
 
 ```bash
-chat --debug
+python3 chat.py --debug
 
-chat> what files are in the .github folder?
-[tool] /ls .github
+chat> /ls .github  
+[tool] /ls .github  
 The only file in this folder is the workflows subfolder.
 ```
 
