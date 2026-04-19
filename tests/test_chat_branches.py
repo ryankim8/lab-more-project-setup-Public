@@ -1,4 +1,3 @@
-import sys
 import types
 import subprocess
 import os
