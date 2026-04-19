@@ -39,9 +39,26 @@ class Chat:
     True
     """
     client = Groq()
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, provider="groq"):
         """Initialize the chat with a default system prompt and empty message history."""
-        self.MODEL = 'openai/gpt-oss-120b'
+        self.provider = provider
+        if provider == "groq":
+            self.client = Groq()
+        else:
+            from openai import OpenAI
+            import os
+            self.client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=os.getenv("OPENROUTER_API_KEY"),
+            )
+        if provider == "openai":
+            self.MODEL = "openai/gpt-4o"
+        elif provider == "anthropic":
+            self.MODEL = "anthropic/claude-opus-4.1"
+        elif provider == "google":
+            self.MODEL = "google/gemini-2.0-flash-001"
+        else:
+            self.MODEL = "openai/gpt-oss-120b"
         self.debug = debug
         self.messages = [
                 {
@@ -149,7 +166,7 @@ class Chat:
         return result
 
 
-def repl(temperature=0.8, debug=False):
+def repl(temperature=0.8, debug=False, provider="groq"):
     """
     Run an interactive command-line chat loop that supports both natural language and slash commands.
 
@@ -234,7 +251,7 @@ def repl(temperature=0.8, debug=False):
     <BLANKLINE>
     """
 
-    chat = Chat(debug=debug)
+    chat = Chat(debug=debug, provider=provider)
     try:
         while True:
             user_input = input('chat> ')
@@ -323,5 +340,13 @@ def some_helper(x):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", default=False)
+    parser.add_argument("--provider", default="groq")
+    parser.add_argument("message", nargs="*", help="Optional message")
+
     args = parser.parse_args()
-    repl(debug=args.debug)
+
+    if args.message:
+        chat = Chat(debug=args.debug, provider=args.provider)
+        print(chat.send_message(" ".join(args.message)))
+    else:
+        repl(debug=args.debug, provider=args.provider)
