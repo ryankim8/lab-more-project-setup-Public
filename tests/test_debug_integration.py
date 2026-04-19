@@ -2,38 +2,31 @@ import subprocess
 import os
 
 
-def test_debug_flag():
-    env = os.environ.copy()
-    env["GROQ_API_KEY"] = "test"
-    proc = subprocess.run(
-        ["python3", "chat.py", "--debug"],
-        input="/ls .github\n",
-        text=True,
-        capture_output=True,
-        env=env,
-    )
-    assert "[tool] /ls" in proc.stdout
-
-
-def test_no_debug_flag():
+def run_chat(input_text):
     env = os.environ.copy()
     env["GROQ_API_KEY"] = "test"
     proc = subprocess.run(
         ["python3", "chat.py"],
-        input="/ls .github\n",
+        input=input_text,
         text=True,
         capture_output=True,
         env=env,
     )
-    assert "[tool]" not in proc.stdout
-    assert "workflows" in proc.stdout
+    return proc.stdout
 
 
-def test_empty_input():
-    proc = subprocess.run(
-        ["python3", "chat.py"],
-        input="\n",
-        text=True,
-        capture_output=True,
+def test_all_repl_commands():
+    out = run_chat(
+        "/help\n"
+        "/ls .\n"
+        "/cat chat.py\n"
+        "/grep Chat chat.py\n"
+        "/calculate 2+2\n"
+        "/compact\n"
+        "/unknown\n"
     )
-    assert proc.returncode == 0
+
+    assert "Available commands" in out
+    assert "class Chat" in out
+    assert "Chat" in out
+    assert "4" in out

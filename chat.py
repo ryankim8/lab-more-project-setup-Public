@@ -11,6 +11,7 @@ from tools.calculate import calculate, tool_schema as calculate_schema
 from tools.ls import ls, tool_schema as ls_schema
 from tools.cat import cat, tool_schema as cat_schema
 from tools.grep import grep, tool_schema as grep_schema
+from tools.compact import compact, tool_schema as compact_schema
 import json
 from dotenv import load_dotenv
 
@@ -25,14 +26,14 @@ class Chat:
     It maintains message history and handles tool calls automatically when the model requests them.
 
     >>> chat = Chat()
-    >>> chat.send_message('my name is bob', temperature=0.0)  # doctest: +ELLIPSIS
-    '...Bob...'
-    >>> chat.send_message('what is my name?', temperature=0.0)  # doctest: +ELLIPSIS
-    '...Bob...'
+    >>> "Bob" in chat.send_message('my name is bob', temperature=0.0)
+    True
+    >>> "Bob" in chat.send_message('what is my name?', temperature=0.0)
+    True
 
     >>> chat2 = Chat()
-    >>> chat2.send_message('what is my name?', temperature=0.0)  # doctest: +ELLIPSIS
-    '...name...'
+    >>> "name" in chat2.send_message('what is my name?', temperature=0.0)
+    True
 
     >>> chat = Chat()
     >>> "4" in chat.send_message('2+2', temperature=0.0)
@@ -96,7 +97,7 @@ class Chat:
             }
         )
 
-        tools = [calculate_schema, ls_schema, cat_schema, grep_schema]
+        tools = [calculate_schema, ls_schema, cat_schema, grep_schema, compact_schema]
         # in order to make non-deterministic code deterministic;
         # in general very hard CS problem;
         # in this case, has a "temperature" param that controls randomness;
@@ -122,21 +123,29 @@ class Chat:
                 "ls": ls,
                 "cat": cat,
                 "grep": grep,
+                "compact": compact,
             }
             
             # Add the assistant's response to conversation
             self.messages.append(response_message)
             
             # Step 3: Execute each tool call
+            compacted_summary = None
             for tool_call in tool_calls:
                 function_name = tool_call.function.name
                 function_to_call = available_functions[function_name]
                 function_args = json.loads(tool_call.function.arguments)
+                if function_name == "compact":
+                    function_args = {"messages": self.messages}
                 if self.debug:
                     print(f"[tool] /{function_name} {tool_call.function.arguments}")
                 function_response = function_to_call(**function_args)
-                
-                
+
+                if function_name == "compact":
+                    self.messages = [{"role": "system", "content": function_response}]
+                    compacted_summary = function_response
+                    continue
+
                 # Add tool response to conversation
                 self.messages.append({
                     "tool_call_id": tool_call.id,
@@ -144,19 +153,23 @@ class Chat:
                     "name": function_name,
                     "content": function_response,
                 })
-            
+
             # Step 4: Get final response from model
-            second_response = self.client.chat.completions.create(
-                model= self.MODEL,
-                messages=self.messages,
-                tools=tools,
-                tool_choice="auto",
-            )
-            result = second_response.choices[0].message.content
-            self.messages.append({
-                'role': 'assistant',
-                'content': result
-            })
+            if compacted_summary is not None:
+                result = compacted_summary
+            else:
+                second_response = self.client.chat.completions.create(
+                    model= self.MODEL,
+                    messages=self.messages,
+                    tools=tools,
+                    tool_choice="auto",
+                )
+                result = second_response.choices[0].message.content
+            if compacted_summary is None:
+                self.messages.append({
+                    'role': 'assistant',
+                    'content': result
+                })
         else:
             result = chat_completion.choices[0].message.content
             self.messages.append({
@@ -259,7 +272,7 @@ def repl(temperature=0.8, debug=False, provider="groq"):
             # handle slash commands
             if user_input.startswith("/"):
                 if user_input == "/help":
-                    print("Available commands: /help, /ls, /cat <file>, /grep <pattern> <path>, /calculate <expression>")
+                    print("Available commands: /help, /ls, /cat <file>, /grep <pattern> <path>, /calculate <expression>, /compact")
 
                 elif user_input.startswith("/ls"):
                     parts = user_input.split()
@@ -302,6 +315,13 @@ def repl(temperature=0.8, debug=False, provider="groq"):
                         result = calculate(parts[1])
                         print(result)
                         chat.messages.append({"role": "assistant", "content": result})
+
+                elif user_input.startswith("/compact"):
+                    if debug:
+                        print("[tool] /compact")
+                    summary = compact(chat.messages)
+                    chat.messages = [{"role": "system", "content": summary}]
+                    print(summary)
 
                 else:
                     print("Unknown command")
