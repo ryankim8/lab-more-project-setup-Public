@@ -298,7 +298,7 @@ def repl(temperature=0.8, debug=False, provider="groq"):
                     parts = user_input.split()
                     path = parts[1] if len(parts) > 1 else "."
                     if debug:
-                        print(f"[tool] /ls {path}")
+                        print(f"[tool] /ls {path}", flush=True)
                     result = ls(path)
                     print(result)
                     chat.messages.append({"role": "assistant", "content": result})
@@ -309,7 +309,7 @@ def repl(temperature=0.8, debug=False, provider="groq"):
                         print("Usage: /cat <file>")
                     else:
                         if debug:
-                            print(f"[tool] /cat {parts[1]}")
+                            print(f"[tool] /cat {parts[1]}", flush=True)
                         result = cat(parts[1])
                         print(result)
                         chat.messages.append({"role": "assistant", "content": result})
@@ -320,7 +320,7 @@ def repl(temperature=0.8, debug=False, provider="groq"):
                         print("Usage: /grep <pattern> <path>")
                     else:
                         if debug:
-                            print(f"[tool] /grep {parts[1]} {parts[2]}")
+                            print(f"[tool] /grep {parts[1]} {parts[2]}", flush=True)
                         result = grep(parts[1], parts[2])
                         print(result)
                         chat.messages.append({"role": "assistant", "content": result})
@@ -331,14 +331,14 @@ def repl(temperature=0.8, debug=False, provider="groq"):
                         print("Usage: /calculate <expression>")
                     else:
                         if debug:
-                            print(f"[tool] /calculate {parts[1]}")
+                            print(f"[tool] /calculate {parts[1]}", flush=True)
                         result = calculate(parts[1])
                         print(result)
                         chat.messages.append({"role": "assistant", "content": result})
 
                 elif user_input.startswith("/compact"):
                     if debug:
-                        print("[tool] /compact")
+                        print("[tool] /compact", flush=True)
                     summary = compact(chat.messages)
                     chat.messages = [{"role": "system", "content": summary}]
                     print(summary)
